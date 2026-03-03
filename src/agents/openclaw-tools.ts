@@ -7,6 +7,7 @@ import type { ToolFsPolicy } from "./tool-fs-policy.js";
 import { createAgentsListTool } from "./tools/agents-list-tool.js";
 import { createBrowserTool } from "./tools/browser-tool.js";
 import { createCanvasTool } from "./tools/canvas-tool.js";
+import { createClaudeCodeSpawnTool } from "./tools/claude-code-spawn-tool.js";
 import type { AnyAgentTool } from "./tools/common.js";
 import { createCronTool } from "./tools/cron-tool.js";
 import { createGatewayTool } from "./tools/gateway-tool.js";
@@ -114,6 +115,7 @@ export function createOpenClawTools(options?: {
       allowHostControl: options?.allowHostBrowserControl,
     }),
     createCanvasTool({ config: options?.config }),
+    createClaudeCodeSpawnTool(),
     createNodesTool({
       agentSessionKey: options?.agentSessionKey,
       agentChannel: options?.agentChannel,
