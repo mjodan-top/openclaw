@@ -1,67 +1,78 @@
 ---
 name: multi-model-serial-review
-description: "多模型串行代码审查 (Multi-Model Serial Code Review). Use when: (1) 需要多模型交叉验证代码质量，(2) 需要不同视角审查代码 (架构/安全/性能)，(3) 重要功能上线前审查，(4) 技术债务评估。NOT for: 简单单文件审查，紧急 hotfix，已有明确审查结论的 PR。"
+description: "多模型并行代码审查 (Multi-Model Parallel Code Review). Use when: (1) 需要多模型交叉验证代码质量，(2) 需要不同视角审查代码，(3) 重要功能上线前审查，(4) 技术债务评估。NOT for: 简单单文件审查，紧急 hotfix，已有明确审查结论的 PR。"
 metadata: { "openclaw": { "emoji": "🔍", "requires": { "anyBins": ["claude", "codex", "pi"] } } }
 ---
 
-# Multi-Model Serial Code Review (多模型串行代码审查)
+# Multi-Model Parallel Code Review (多模型并行代码审查)
 
-通过**四个不同模型**的串行审查，从架构、安全、性能、代码质量四个维度进行代码质量评估，生成全面的审查报告。
+每个审查阶段由**3 个模型并行审查**同一维度，通过交叉验证提高审查准确性和全面性。
 
 ## 核心架构
 
 ```
-Step 1 [glm-5]        → review-phase1.txt (架构 + 代码质量初审)
-   ↓
-Step 2 [kimi-k2.5]    → review-phase2.txt (审查 Phase 1 + 安全审查)
-   ↓
-Step 3 [qwen3.5-plus] → review-phase3.txt (审查 Phase 1+2 + 性能审查)
-   ↓
-Step 4 [MiniMax-M2.5] → review-phase4.txt (审查 Phase 1+2+3 + 代码质量审查)
-   ↓
-Step 5 [汇总]         → final-report.txt (汇总所有阶段 + 共识分析)
+Phase 1: 架构审查 (3 模型并行)
+├── glm-5        → phase1-architecture-glm5.txt
+├── kimi-k2.5    → phase1-architecture-kimi.txt
+├── qwen3.5-plus → phase1-architecture-qwen.txt
+└── [汇总]       → phase1-architecture-final.txt (共识分析)
+      ↓
+Phase 2: 安全审查 (3 模型并行)
+├── glm-5        → phase2-security-glm5.txt
+├── kimi-k2.5    → phase2-security-kimi.txt
+├── qwen3.5-plus → phase2-security-qwen.txt
+└── [汇总]       → phase2-security-final.txt (共识分析)
+      ↓
+Phase 3: 性能审查 (3 模型并行)
+├── glm-5        → phase3-performance-glm5.txt
+├── kimi-k2.5    → phase3-performance-kimi.txt
+├── qwen3.5-plus → phase3-performance-qwen.txt
+└── [汇总]       → phase3-performance-final.txt (共识分析)
+      ↓
+Phase 4: 最终汇总报告 → final-report.txt
 ```
 
 ## 可用模型池
 
-| 模型 ID        | 名称         | 特长     | 审查维度           |
-| -------------- | ------------ | -------- | ------------------ |
-| `glm-5`        | GLM-5        | 架构分析 | 架构设计、模块划分 |
-| `kimi-k2.5`    | Kimi K2.5    | 逻辑推理 | 安全审查、逻辑验证 |
-| `qwen3.5-plus` | Qwen3.5 Plus | 性能分析 | 性能瓶颈、优化建议 |
-| `MiniMax-M2.5` | MiniMax M2.5 | 代码质量 | 代码规范、最佳实践 |
+| 模型 ID        | 名称         | 特长               |
+| -------------- | ------------ | ------------------ |
+| `glm-5`        | GLM-5        | 架构分析、代码理解 |
+| `kimi-k2.5`    | Kimi K2.5    | 逻辑推理、安全分析 |
+| `qwen3.5-plus` | Qwen3.5 Plus | 性能分析、优化建议 |
 
 ## 何时使用
 
 | 场景               | 使用此 skill | 原因                     |
 | ------------------ | ------------ | ------------------------ |
-| 重要功能上线前审查 | ✅           | 多模型交叉验证降低风险   |
-| 架构重构评估       | ✅           | 需要多维度审查           |
-| 安全敏感代码审查   | ✅           | 专业安全审查步骤         |
-| 性能关键路径审查   | ✅           | 专业性能分析步骤         |
+| 重要功能上线前审查 | ✅           | 3 模型交叉验证降低风险   |
+| 架构重构评估       | ✅           | 多视角审查               |
+| 安全敏感代码审查   | ✅           | 3 模型独立判断           |
+| 性能关键路径审查   | ✅           | 多模型性能分析           |
 | 简单文档修改       | ❌           | 单模型审查即可           |
 | 紧急 hotfix        | ❌           | 时间敏感，单模型快速审查 |
 
+---
+
 ## 审查流程说明
 
-### Step 1: glm-5 - 架构设计和代码质量初审
+### Phase 1: 架构审查 (3 模型并行)
 
-**模型**: `glm-5` (强于代码理解和架构分析)
+**审查目标**: 架构设计、模块划分、代码质量
 
-**审查维度**:
+**3 个模型独立审查**:
 
-- 模块划分合理性
-- 接口设计清晰度
-- 代码规范遵循
-- 命名一致性
-- 函数职责单一性
+| 模型         | 输出文件                     | 审查重点           |
+| ------------ | ---------------------------- | ------------------ |
+| glm-5        | phase1-architecture-glm5.txt | 架构设计、模块划分 |
+| kimi-k2.5    | phase1-architecture-kimi.txt | 逻辑结构、接口设计 |
+| qwen3.5-plus | phase1-architecture-qwen.txt | 代码规范、可维护性 |
 
-**输出文件**: `/tmp/code-review/phase1-architecture.txt`
+**汇总输出**: `phase1-architecture-final.txt`
 
-**提示词模板**:
+**提示词模板** (3 个模型使用相同的提示词):
 
 ```
-你是 glm-5，负责代码架构设计和代码质量初审。
+你是代码审查专家，负责架构设计和代码质量审查。
 
 ## 审查目标
 {TARGET_PATH}
@@ -80,270 +91,247 @@ Step 5 [汇总]         → final-report.txt (汇总所有阶段 + 共识分析)
 - 架构评分 (1-10)
 
 ## 输出文件
-写入：/tmp/code-review/phase1-architecture.txt
+写入：/tmp/code-review/phase1-architecture-{model}.txt
 
 请开始审查。
 ```
 
----
-
-### Step 2: kimi-k2.5 - 审查 Phase 1 + 安全审查
-
-**模型**: `kimi-k2.5` (强于逻辑推理和安全分析)
-
-**审查维度**:
-
-- 评估 Phase 1 的审查结论
-- 安全漏洞检查（注入/XSS/CSRF）
-- 权限检查是否充分
-- 敏感数据处理是否合规
-- 输入验证是否完整
-
-**输入文件**: `/tmp/code-review/phase1-architecture.txt`
-
-**输出文件**: `/tmp/code-review/phase2-security.txt`
-
-**提示词模板**:
+**汇总提示词** (Phase 1 完成后执行):
 
 ```
-你是 kimi-k2.5，负责审查 Phase 1 结果并进行安全审查。
+你是技术总监，负责汇总 3 个模型的架构审查结果。
 
 ## 输入文件
-/tmp/code-review/phase1-architecture.txt
+- phase1-architecture-glm5.txt
+- phase1-architecture-kimi.txt
+- phase1-architecture-qwen.txt
 
-## 审查任务
-1. 评估 Phase 1 的审查结论是否准确
-2. 补充 Phase 1 遗漏的问题
+## 汇总任务
+1. 识别 3 个模型都发现的问题 → 共识问题 (最高优先级)
+2. 识别 2 个模型提到的问题 → 重要问题
+3. 识别单个模型发现的问题 → 待确认问题
+4. 记录分歧点 (不同模型评价差异)
 
-## 安全审查维度
-1. 有无注入风险（SQL/命令/路径）？
-2. 有无 XSS/CSRF 风险？
-3. 权限检查是否充分？
-4. 敏感数据（密码/token/密钥）处理是否安全？
-5. 输入验证是否完整？
-6. 有无竞态条件或并发问题？
+## 输出文件
+写入：/tmp/code-review/phase1-architecture-final.txt
+```
+
+---
+
+### Phase 2: 安全审查 (3 模型并行)
+
+**审查目标**: 安全漏洞、权限控制、数据保护
+
+**3 个模型独立审查**:
+
+| 模型         | 输出文件                 | 审查重点           |
+| ------------ | ------------------------ | ------------------ |
+| glm-5        | phase2-security-glm5.txt | 注入风险、输入验证 |
+| kimi-k2.5    | phase2-security-kimi.txt | 权限控制、认证逻辑 |
+| qwen3.5-plus | phase2-security-qwen.txt | 数据安全、隐私保护 |
+
+**输入文件**: Phase 1 汇总报告 (`phase1-architecture-final.txt`)
+
+**汇总输出**: `phase2-security-final.txt`
+
+**提示词模板** (3 个模型使用相同的提示词):
+
+```
+你是安全审查专家，负责安全漏洞和风险控制审查。
+
+## 输入文件
+- /tmp/code-review/phase1-architecture-final.txt (Phase 1 结果)
+
+## 审查目标
+{TARGET_PATH}
+
+## 审查维度
+1. 有无注入风险（SQL/命令/路径/XSS/CSRF）？
+2. 权限检查是否充分？认证逻辑是否安全？
+3. 敏感数据（密码/token/密钥）处理是否安全？
+4. 输入验证是否完整？
+5. 有无竞态条件或并发安全问题？
 
 ## 输出要求
-- 对 Phase 1 的评估意见
-- 新增安全问题列表
-- 问题严重级别和修复优先级
+- 按文件列出安全问题
+- 问题严重级别 (Critical/Major/Minor)
+- 具体修复建议
 - 安全评分 (1-10)
 
 ## 输出文件
-写入：/tmp/code-review/phase2-security.txt
+写入：/tmp/code-review/phase2-security-{model}.txt
 
 请开始审查。
 ```
 
----
-
-### Step 3: qwen3.5-plus - 审查 Phase 1+2 + 性能审查
-
-**模型**: `qwen3.5-plus` (强于性能分析和优化建议)
-
-**审查维度**:
-
-- 评估 Phase 1+2 的审查结论
-- 性能瓶颈分析
-- 时间/空间复杂度
-- 内存管理是否合理
-- 优化建议
-
-**输入文件**:
-
-- `/tmp/code-review/phase1-architecture.txt`
-- `/tmp/code-review/phase2-security.txt`
-
-**输出文件**: `/tmp/code-review/phase3-performance.txt`
-
-**提示词模板**:
+**汇总提示词**:
 
 ```
-你是 qwen3.5-plus，负责审查 Phase 1+2 结果并进行性能审查。
+你是技术总监，负责汇总 3 个模型的安全审查结果。
 
 ## 输入文件
-- /tmp/code-review/phase1-architecture.txt
-- /tmp/code-review/phase2-security.txt
+- phase2-security-glm5.txt
+- phase2-security-kimi.txt
+- phase2-security-qwen.txt
 
-## 审查任务
-1. 评估 Phase 1+2 的审查结论是否准确
-2. 补充前两个阶段遗漏的问题
+## 汇总任务
+1. 识别 3 个模型都发现的安全问题 → 共识问题 (最高优先级)
+2. 识别 2 个模型提到的问题 → 重要问题
+3. 识别单个模型发现的问题 → 待确认问题
+4. 记录分歧点
 
-## 性能审查维度
-1. 有无明显的性能瓶颈（循环嵌套/重复查询）？
-2. 时间复杂度是否合理？
-3. 空间复杂度是否合理？
-4. 内存管理是否有问题（泄漏/冗余）？
-5. 有无不必要的重复计算？
-6. 数据库/API调用是否可优化？
-7. 缓存策略是否合理？
+## 输出文件
+写入：/tmp/code-review/phase2-security-final.txt
+```
+
+---
+
+### Phase 3: 性能审查 (3 模型并行)
+
+**审查目标**: 性能瓶颈、复杂度分析、优化建议
+
+**3 个模型独立审查**:
+
+| 模型         | 输出文件                    | 审查重点             |
+| ------------ | --------------------------- | -------------------- |
+| glm-5        | phase3-performance-glm5.txt | 复杂度分析、算法优化 |
+| kimi-k2.5    | phase3-performance-kimi.txt | 资源使用、内存管理   |
+| qwen3.5-plus | phase3-performance-qwen.txt | 缓存策略、数据库优化 |
+
+**输入文件**: Phase 1+2 汇总报告
+
+**汇总输出**: `phase3-performance-final.txt`
+
+**提示词模板** (3 个模型使用相同的提示词):
+
+```
+你是性能审查专家，负责性能瓶颈和优化建议审查。
+
+## 输入文件
+- /tmp/code-review/phase1-architecture-final.txt
+- /tmp/code-review/phase2-security-final.txt
+
+## 审查目标
+{TARGET_PATH}
+
+## 审查维度
+1. 有无明显的性能瓶颈（循环嵌套/重复查询/N+1 问题）？
+2. 时间复杂度是否合理？有无优化空间？
+3. 空间复杂度是否合理？内存管理是否有问题？
+4. 缓存策略是否合理？有无不必要的重复计算？
+5. 数据库/API 调用是否可优化？
 
 ## 输出要求
-- 对 Phase 1+2 的评估意见
-- 性能问题列表和优化建议
-- 预估性能提升幅度
+- 按文件列出性能问题
+- 预估性能影响 (高/中/低)
+- 具体优化建议和预期提升
 - 性能评分 (1-10)
 
 ## 输出文件
-写入：/tmp/code-review/phase3-performance.txt
+写入：/tmp/code-review/phase3-performance-{model}.txt
 
 请开始审查。
 ```
 
----
-
-### Step 4: MiniMax-M2.5 - 审查 Phase 1+2+3 + 代码质量审查
-
-**模型**: `MiniMax-M2.5` (强于代码质量和最佳实践)
-
-**审查维度**:
-
-- 评估 Phase 1+2+3 的审查结论
-- 代码规范遵循 (命名/注释/格式)
-- 设计模式应用
-- 可维护性评估
-- 技术债务识别
-
-**输入文件**:
-
-- `/tmp/code-review/phase1-architecture.txt`
-- `/tmp/code-review/phase2-security.txt`
-- `/tmp/code-review/phase3-performance.txt`
-
-**输出文件**: `/tmp/code-review/phase4-code-quality.txt`
-
-**提示词模板**:
+**汇总提示词**:
 
 ```
-你是 MiniMax-M2.5，负责审查 Phase 1+2+3 结果并进行代码质量审查。
+你是技术总监，负责汇总 3 个模型的性能审查结果。
 
 ## 输入文件
-- phase1-architecture.txt (架构审查)
-- phase2-security.txt (安全审查)
-- phase3-performance.txt (性能审查)
+- phase3-performance-glm5.txt
+- phase3-performance-kimi.txt
+- phase3-performance-qwen.txt
 
-## 审查任务
-1. 评估前三阶段的审查结论是否准确
-2. 补充前三个阶段遗漏的问题
-
-## 代码质量审查维度
-1. 代码规范遵循 (命名/注释/格式)
-2. 设计模式应用是否合理
-3. 可维护性 (模块化/可扩展性)
-4. 技术债务识别
-5. 测试覆盖评估
-6. 文档完整性
-
-## 输出要求
-- 对 Phase 1+2+3 的评估意见
-- 代码质量问题列表
-- 最佳实践建议
-- 代码质量评分 (1-10)
+## 汇总任务
+1. 识别 3 个模型都发现的性能问题 → 共识问题
+2. 识别 2 个模型提到的问题 → 重要问题
+3. 识别单个模型发现的问题 → 待确认问题
+4. 记录分歧点
 
 ## 输出文件
-写入：/tmp/code-review/phase4-code-quality.txt
-
-请开始审查。
+写入：/tmp/code-review/phase3-performance-final.txt
 ```
 
 ---
 
-### Step 5: 汇总 - 生成最终报告
+### Phase 4: 最终汇总报告
 
-**任务**: 汇总所有阶段审查结果，生成共识分析报告
+**任务**: 汇总所有阶段审查结果，生成最终报告
 
 **输入文件**:
 
-- `/tmp/code-review/phase1-architecture.txt`
-- `/tmp/code-review/phase2-security.txt`
-- `/tmp/code-review/phase3-performance.txt`
-- `/tmp/code-review/phase4-code-quality.txt`
+- `phase1-architecture-final.txt`
+- `phase2-security-final.txt`
+- `phase3-performance-final.txt`
 
-**输出文件**: `/tmp/code-review/final-report.txt`
+**输出文件**: `final-report.txt`
 
 **提示词模板**:
 
 ```
-你是技术总监，负责汇总多模型串行审查结果，生成最终报告。
+你是技术总监，负责汇总多模型并行审查结果，生成最终报告。
 
 ## 输入文件
-- phase1-architecture.txt (glm-5 - 架构审查)
-- phase2-security.txt (kimi-k2.5 - 安全审查)
-- phase3-performance.txt (qwen3.5-plus - 性能审查)
-- phase4-code-quality.txt (MiniMax-M2.5 - 代码质量审查)
+- phase1-architecture-final.txt (架构审查汇总)
+- phase2-security-final.txt (安全审查汇总)
+- phase3-performance-final.txt (性能审查汇总)
 
 ## 汇总任务
 
-### 1. 问题共识分析
-- 四个模型都发现的问题 → **共识问题** (最高优先级)
-- 三个模型提到的问题 → **重要问题**
-- 两个模型提到的问题 → **关注问题**
-- 单个模型发现的问题 → **待确认问题**
+### 1. 跨阶段共识分析
+- 在多个阶段都被提到的问题 → **跨阶段共识** (最高优先级)
+- 单个阶段内的共识问题 → **阶段共识**
+- 单个模型发现的问题 → **待确认**
 
-### 2. 分歧分析
-- 不同模型对同一问题的评价差异
-- 需要人工判断的争议点
-
-### 3. 综合评分
+### 2. 综合评分
 - 架构评分 (来自 Phase 1)
 - 安全评分 (来自 Phase 2)
 - 性能评分 (来自 Phase 3)
-- 代码质量评分 (来自 Phase 4)
 - 总体评分 (加权平均)
 
-### 4. 优先级排序
-按严重程度和修复成本排序：
-- P0: 必须立即修复（安全漏洞/严重架构问题）
-- P1: 重要问题（性能瓶颈/代码坏味道）
-- P2: 改进建议（优化空间/最佳实践）
+### 3. 优先级排序
+- P0: 必须立即修复（跨阶段共识/安全漏洞）
+- P1: 重要问题（阶段共识/性能瓶颈）
+- P2: 改进建议（待确认问题/优化空间）
 
 ## 最终报告结构
 
-```
-
-=== 多模型串行代码审查报告 ===
+=== 多模型并行代码审查报告 ===
 
 ## 审查概览
-
 - 审查路径：{TARGET_PATH}
 - 审查时间：{TIMESTAMP}
-- 参与模型：glm-5, kimi-k2.5, qwen3.5-plus, MiniMax-M2.5
+- 审查方法：3 模型并行审查 (glm-5, kimi-k2.5, qwen3.5-plus)
+- 审查阶段：架构 → 安全 → 性能
 
 ## 综合评分
+| 维度 | 评分 | 说明 |
+|------|------|------|
+| 架构设计 | X/10 | ... |
+| 安全性 | X/10 | ... |
+| 性能 | X/10 | ... |
+| 总体 | X/10 | ... |
 
-| 维度     | 评分 | 说明 |
-| -------- | ---- | ---- |
-| 架构设计 | X/10 | ...  |
-| 安全性   | X/10 | ...  |
-| 性能     | X/10 | ...  |
-| 代码质量 | X/10 | ...  |
-| 总体     | X/10 | ...  |
-
-## 共识问题 (P0 - 必须修复)
-
+## P0 问题 (必须立即修复)
 1. [问题描述]
    - 发现阶段：Phase X
+   - 共识级别：跨阶段共识/阶段共识
    - 影响范围：...
    - 修复建议：...
 
-## 重要问题 (P1 - 重要)
-
+## P1 问题 (重要)
 ...
 
-## 改进建议 (P2 - 优化)
-
+## P2 改进建议
 ...
 
 ## 分歧点 (需人工判断)
-
 ...
 
 ## 下一步行动建议
-
 1. ...
 2. ...
-
-```
 
 ## 输出文件
 写入：/tmp/code-review/final-report.txt
@@ -358,244 +346,110 @@ Step 5 [汇总]         → final-report.txt (汇总所有阶段 + 共识分析)
 ### 基本用法
 
 ```bash
-# 通过 tech-director 发送审查任务
 python3 scripts/ws-send-to-agent.py "
-请执行多模型串行代码审查：
+请执行多模型并行代码审查：
 
 ## 审查目标
 /Users/zkf/work/openclaw/src
 
 ## 审查流程
 
-Step 1 [glm-5]: 架构和代码质量初审
-- 输出：/tmp/code-review/phase1-architecture.txt
+Phase 1: 架构审查 (3 模型并行)
+- glm-5, kimi-k2.5, qwen3.5-plus 独立审查
+- 输出：phase1-architecture-final.txt (汇总)
 
-Step 2 [kimi-k2.5]: 审查 Phase 1 + 安全审查
-- 输出：/tmp/code-review/phase2-security.txt
+Phase 2: 安全审查 (3 模型并行)
+- 输入：Phase 1 结果
+- 输出：phase2-security-final.txt (汇总)
 
-Step 3 [qwen3.5-plus]: 审查 Phase 1+2 + 性能审查
-- 输出：/tmp/code-review/phase3-performance.txt
+Phase 3: 性能审查 (3 模型并行)
+- 输入：Phase 1+2 结果
+- 输出：phase3-performance-final.txt (汇总)
 
-Step 4 [汇总]: 生成最终报告
-- 输出：/tmp/code-review/final-report.txt
+Phase 4: 最终汇总
+- 输出：final-report.txt
 
-请开始执行，每步完成后汇报进度。
-"
-```
-
-### 针对特定文件的审查
-
-```bash
-python3 scripts/ws-send-to-agent.py "
-请执行多模型串行代码审查：
-
-## 审查目标
-/Users/zkf/work/openclaw/src/auth/login.ts
-
-## 审查重点
-- 安全性（认证逻辑/密码处理）
-- 性能（验证效率）
-
-请按标准 4 步流程执行。
+请开始执行，每阶段完成后汇报进度。
 "
 ```
 
 ---
 
-## 审查报告模板
+## 输出文件清单
 
-### 阶段报告格式 (Phase 1/2/3)
+### Phase 1 (架构审查)
 
-```
-=== Phase X 审查报告 ===
+- `phase1-architecture-glm5.txt` - glm-5 审查结果
+- `phase1-architecture-kimi.txt` - kimi-k2.5 审查结果
+- `phase1-architecture-qwen.txt` - qwen3.5-plus 审查结果
+- `phase1-architecture-final.txt` - Phase 1 汇总
 
-## 审查信息
-- 审查模型：{MODEL}
-- 审查时间：{TIMESTAMP}
-- 审查路径：{TARGET_PATH}
+### Phase 2 (安全审查)
 
-## 审查维度
-- {DIMENSION_1}
-- {DIMENSION_2}
-- ...
+- `phase2-security-glm5.txt` - glm-5 审查结果
+- `phase2-security-kimi.txt` - kimi-k2.5 审查结果
+- `phase2-security-qwen.txt` - qwen3.5-plus 审查结果
+- `phase2-security-final.txt` - Phase 2 汇总
 
-## 问题列表
+### Phase 3 (性能审查)
 
-### [文件名]
+- `phase3-performance-glm5.txt` - glm-5 审查结果
+- `phase3-performance-kimi.txt` - kimi-k2.5 审查结果
+- `phase3-performance-qwen.txt` - qwen3.5-plus 审查结果
+- `phase3-performance-final.txt` - Phase 3 汇总
 
-#### Critical
-1. [问题描述]
-   - 位置：line X
-   - 影响：...
-   - 建议：...
+### Phase 4 (最终报告)
 
-#### Major
-...
-
-#### Minor
-...
-
-## 评分
-- {DIMENSION} 评分：X/10
-- 理由：...
-
-## 总结
-...
-```
-
-### 最终报告格式
-
-见上面 Step 4 提示词模板中的结构。
+- `final-report.txt` - 最终汇总报告
 
 ---
 
-## 与技术总监集成
+## 结果解读
 
-### 修改 AGENTS.md
+### 共识级别
 
-在技术总监的 `AGENTS.md` 中添加：
+| 级别       | 说明                     | 优先级      |
+| ---------- | ------------------------ | ----------- |
+| 跨阶段共识 | 3 个模型在多个阶段都提到 | P0 - 最高   |
+| 阶段共识   | 3 个模型在同一阶段都提到 | P0 - 高     |
+| 2 模型同意 | 2 个模型提到             | P1 - 重要   |
+| 单模型发现 | 仅 1 个模型提到          | P2 - 待确认 |
 
-````markdown
-## 多模型串行代码审查
+### 评分标准
 
-当需要全面审查代码时，使用 `multi-model-serial-review` skill。
-
-### 触发方式
-
-```bash
-python3 scripts/ws-send-to-agent.py "请执行多模型串行代码审查：[目标路径]"
-```
-````
-
-### 审查流程
-
-1. glm-5 → 架构和代码质量初审
-2. kimi-k2.5 → 安全审查
-3. qwen3.5-plus → 性能审查
-4. 汇总 → 生成最终报告
-
-### 结果解读
-
-- **共识问题**: 优先处理
-- **分歧点**: 需要人工判断
-- **评分 < 6**: 建议重构
-
-````
+- **评分 >= 8**: 优秀，保持
+- **评分 6-7**: 良好，有改进空间
+- **评分 < 6**: 需要重构
 
 ---
 
-## 验证方案
+## 验证检查清单
 
-### 测试用例
-
-```bash
-# 审查 OpenClaw 源码
-python3 scripts/ws-send-to-agent.py "
-请执行串行多步骤代码审查：
-
-## 审查目标
-/Users/zkf/work/openclaw/src
-
-## 审查流程
-
-Step 1 [glm-5]: 架构和代码质量初审
-- 输出：/tmp/code-review/phase1-architecture.txt
-- 关注：模块划分、接口设计、代码规范
-
-Step 2 [kimi-k2.5]: 审查 Phase 1 + 安全审查
-- 读取：phase1-architecture.txt
-- 输出：/tmp/code-review/phase2-security.txt
-- 关注：安全漏洞、注入风险、权限检查
-
-Step 3 [qwen3.5-plus]: 审查 Phase 1+2 + 性能审查
-- 读取：phase1-architecture.txt, phase2-security.txt
-- 输出：/tmp/code-review/phase3-performance.txt
-- 关注：性能瓶颈、复杂度分析、优化建议
-
-Step 4 [汇总]: 生成最终报告
-- 读取：所有阶段文件
-- 输出：/tmp/code-review/final-report.txt
-- 包含：共识问题、分歧点、优先级排序
-
-请开始执行，每步完成后汇报进度。
-"
-````
-
-### 验证检查清单
-
-- [ ] Phase 1 文件已生成且内容完整
-- [ ] Phase 2 文件引用了 Phase 1 结果
-- [ ] Phase 3 文件引用了 Phase 1+2 结果
-- [ ] Final Report 包含共识分析
+- [ ] Phase 1: 3 个模型审查文件已生成
+- [ ] Phase 1: 汇总文件包含共识分析
+- [ ] Phase 2: 3 个模型审查文件已生成
+- [ ] Phase 2: 汇总文件引用了 Phase 1 结果
+- [ ] Phase 3: 3 个模型审查文件已生成
+- [ ] Phase 3: 汇总文件引用了 Phase 1+2 结果
+- [ ] Phase 4: 最终报告包含跨阶段共识分析
 - [ ] 所有评分在合理范围内
 - [ ] 问题列表按优先级排序
 
 ---
 
-## 风险与注意事项
-
-1. **glm-5 模型配置** - 已配置到 openai provider
-2. **时间延长** - 串行审查需要等待每步完成（预计 15-30 分钟）
-3. **上下文累积** - 后续步骤需要读取前面所有结果
-4. **文件链管理** - 需要确保文件正确传递
-
-### 缓解措施
-
-- Phase 1 模型配置已确认
-- 每步设置合理的超时时间
-- 使用绝对路径引用文件
-- 最终报告进行结果合并
-
----
-
-## 模型配置参考
-
-### 添加 glm-5 到 models.json
-
-```json
-{
-  "providers": {
-    "openai": {
-      "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-      "api": "openai-completions",
-      "models": [
-        {
-          "id": "glm-5",
-          "name": "GLM-5",
-          "reasoning": false,
-          "input": ["text"],
-          "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0,
-            "cacheWrite": 0
-          },
-          "contextWindow": 256000,
-          "maxTokens": 8192
-        }
-      ],
-      "apiKey": "DASHSCOPE_API_KEY"
-    }
-  }
-}
-```
-
----
-
 ## 相关文件
 
-| 文件                                                          | 用途         |
-| ------------------------------------------------------------- | ------------ |
-| `/Users/zkf/.openclaw/agents/tech-director/agent/models.json` | 模型池配置   |
-| `/Users/zkf/.openclaw/agents/tech-director/agent/AGENTS.md`   | 工作指南     |
-| `/Users/zkf/work/openclaw/skills/serial-step-task/SKILL.md`   | 串行任务基础 |
-| `scripts/ws-send-to-agent.py`                                 | 通信脚本     |
+| 文件                                                          | 用途       |
+| ------------------------------------------------------------- | ---------- |
+| `/Users/zkf/.openclaw/agents/tech-director/agent/models.json` | 模型池配置 |
+| `/Users/zkf/.openclaw/agents/tech-director/agent/AGENTS.md`   | 工作指南   |
+| `scripts/ws-send-to-agent.py`                                 | 通信脚本   |
 
 ---
 
 ## 注意事项
 
-1. **审查目录选择**：避免过大目录（如整个 `node_modules`）
-2. **审查时间**：预留足够时间等待串行完成
-3. **结果解读**：重视共识问题，审慎评估分歧点
-4. **文件管理**：审查完成后归档报告文件
+1. **并行审查**: 每个阶段 3 个模型同时审查，不是串行
+2. **文件链**: 后续阶段需要读取前面阶段的汇总结果
+3. **共识分析**: 重视 3 个模型都发现的问题
+4. **审查时间**: 并行审查比单模型慢，但准确性更高
